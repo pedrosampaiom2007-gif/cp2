@@ -121,12 +121,6 @@ As três configurações respondem às mesmas 8 perguntas (`PERGUNTAS_TESTE` em
 `app/rag/avaliacao.py`), com o mesmo reranker e o mesmo modelo. O RAGAS usa o `gemma4:cloud`
 como juiz e o `nomic-embed-text` para o answer_relevancy.
 
-| chunk_size | overlap | faithfulness médio | answer_relevancy médio |
-|---:|---:|---:|---:|
-| 256 | 32 | _rodar_ | _rodar_ |
-| 512 | 64 | _rodar_ | _rodar_ |
-| 1024 | 128 | _rodar_ | _rodar_ |
-
 `python -m app.rag.avaliacao` grava em `resultados/`:
 
 - `ragas_por_pergunta.csv` — pergunta, resposta, fontes e as duas métricas por configuração;
