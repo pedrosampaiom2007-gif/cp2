@@ -27,7 +27,7 @@ def criar_embeddings(config: Optional[Config] = None) -> OllamaEmbeddings:
     config = config or carregar_config()
     return OllamaEmbeddings(
         model=config.modelo_embedding,
-        base_url=config.base_url,
+        base_url=config.embedding_base_url,
         client_kwargs={"headers": {"Authorization": f"Bearer {config.api_key}"}},
     )
 

@@ -79,6 +79,7 @@ class Config:
     memoria_estrategia: str
     memoria_max_tokens: int
     modelo_embedding: str = MODELO_EMBEDDING
+    embedding_base_url: str = "https://ollama.com"
     rag_temperatura: float = 0.0
     rag_chunk_size: int = 512
     rag_top_k: int = 4
@@ -133,6 +134,10 @@ def carregar_config() -> Config:
         memoria_estrategia=os.getenv("MEMORIA_ESTRATEGIA", "token_buffer").strip().lower(),
         memoria_max_tokens=_ler_int("MEMORIA_MAX_TOKENS", 1200),
         modelo_embedding=os.getenv("OLLAMA_EMBED_MODEL", MODELO_EMBEDDING).strip(),
+        embedding_base_url=(
+            os.getenv("OLLAMA_EMBED_BASE_URL", "").strip()
+            or os.getenv("OLLAMA_BASE_URL", "https://ollama.com").strip()
+        ),
         rag_temperatura=_ler_float("RAG_TEMPERATURE", 0.0),
         rag_chunk_size=_ler_int("RAG_CHUNK_SIZE", 512),
         rag_top_k=_ler_int("RAG_TOP_K", 4),
