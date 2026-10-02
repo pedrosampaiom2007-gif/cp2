@@ -104,7 +104,10 @@ def detectar_ano(leitor: PdfReader) -> Optional[int]:
 def gravar_recorte(conteudo: bytes, fonte: FonteDocumento) -> Dict[str, object]:
     """Grava `documentos/<id>.pdf` com as páginas selecionadas."""
     leitor = PdfReader(io.BytesIO(conteudo))
-    paginas = selecionar_paginas(leitor, fonte.palavras_chave)
+    if fonte.paginas:
+        paginas = [p - 1 for p in fonte.paginas[:MAX_PAGINAS] if 0 < p <= len(leitor.pages)]
+    else:
+        paginas = selecionar_paginas(leitor, fonte.palavras_chave)
 
     escritor = PdfWriter()
     for indice in paginas:

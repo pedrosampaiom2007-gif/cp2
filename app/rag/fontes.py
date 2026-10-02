@@ -3,7 +3,9 @@
 Cada fonte é um PDF público do domínio de treino e atividade física. Do
 arquivo original são extraídas no máximo `MAX_PAGINAS` páginas — as que mais
 concentram os termos de `palavras_chave` — e o recorte é salvo em
-`documentos/` junto com os metadados usados no metadata filtering.
+`documentos/` junto com os metadados usados no metadata filtering. Quando a
+fonte define `paginas`, essas páginas são usadas no lugar da seleção
+automática.
 """
 
 from __future__ import annotations
@@ -28,12 +30,14 @@ class FonteDocumento:
     palavras_chave: Tuple[str, ...]
     ano: Optional[int] = None
     urls_alternativas: Tuple[str, ...] = field(default_factory=tuple)
+    paginas: Tuple[int, ...] = field(default_factory=tuple)
 
     def metadados(self) -> Dict[str, object]:
         """Metadados gravados junto de cada chunk no ChromaDB."""
         dados = asdict(self)
         dados.pop("palavras_chave")
         dados.pop("urls_alternativas")
+        dados.pop("paginas")
         dados["ano"] = self.ano or 0
         return dados
 
@@ -47,6 +51,7 @@ FONTES: List[FonteDocumento] = [
         categoria="recomendacao_atividade_fisica",
         publico="adultos",
         ano=2021,
+        paginas=(10, 24, 25, 29, 30),
         url="https://bvsms.saude.gov.br/bvs/publicacoes/guia_atividade_fisica_populacao_brasileira.pdf",
         urls_alternativas=(
             "http://bvsms.saude.gov.br/bvs/publicacoes/guia_atividade_fisica_populacao_brasileira.pdf",
@@ -64,6 +69,7 @@ FONTES: List[FonteDocumento] = [
         categoria="recomendacao_atividade_fisica",
         publico="geral",
         ano=2020,
+        paginas=(7, 10, 11, 12, 13),
         url="https://iris.who.int/bitstream/handle/10665/337001/9789240014886-por.pdf",
         urls_alternativas=(
             "https://iris.who.int/server/api/core/bitstreams/9e776de6-adc7-46c1-936f-6dd2bb4f7373/content",

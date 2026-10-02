@@ -51,11 +51,20 @@ documentos/*.pdf ──► LOAD ──► SPLIT ──► EMBED ─────�
 | 4 | Influência de variáveis do treinamento contra-resistência sobre a força muscular de idosos: uma revisão sistemática com ênfase nas relações dose-resposta | Revista Brasileira de Medicina do Esporte | artigo_cientifico | idosos | [SciELO](https://www.scielo.br/j/rbme/a/8z4PZxrP4fPvJgfccndzx8M/?format=pdf&lang=pt) |
 | 5 | Sessão de treinamento de força supervisionada aumenta a carga total levantada e as respostas subjetivas em sujeitos treinados | Journal of Physical Education | artigo_cientifico | adultos | [SciELO](https://www.scielo.br/j/jpe/a/5fnPtNjMh8Swt3g8kcHTgkt/?format=pdf&lang=pt) |
 
-`python -m app.rag.baixar_documentos` baixa os cinco PDFs e grava em `documentos/` um recorte
-de **no máximo 5 páginas** de cada um: as páginas recebem uma nota pela frequência das
-palavras-chave do tema e as cinco melhores entram, na ordem original. O arquivo
-`documentos/fontes.json` registra quais páginas do original foram usadas, e a citação de cada
-resposta aponta a página do documento original.
+Os PDFs já estão em `documentos/`, com **no máximo 5 páginas** de cada fonte:
+
+| Documento | Páginas do original usadas | Conteúdo |
+|---|---|---|
+| Guia de Atividade Física (MS) | 10, 24, 25, 29, 30 de 52 | atividade × exercício físico, capítulos de adultos e de idosos |
+| Diretrizes da OMS | 7, 10, 11, 12, 13 de 24 | mensagens principais, recomendações para adultos e para idosos |
+| Recuperação entre séries (RBME) | 1, 2, 3, 5, 6 de 9 | resumo, métodos, resultados da meta-análise e discussão |
+| Variáveis do treino em idosos (RBME) | 2, 3, 4, 5, 6 de 7 | séries, frequência, intensidade, intervalos e ordem dos exercícios |
+| Treino supervisionado (JPE) | 1, 2, 3, 4, 5 de 7 | resumo, métodos, resultados e discussão |
+
+Nos dois guias as páginas são fixas no catálogo (`paginas` em `app/rag/fontes.py`); nos
+artigos, `python -m app.rag.baixar_documentos` escolhe as 5 páginas com mais ocorrências das
+palavras-chave do tema. O arquivo `documentos/fontes.json` registra as páginas usadas, e a
+citação de cada resposta aponta a página do documento original.
 
 Se algum site bloquear o download, baixe o PDF pelo navegador e importe:
 
@@ -68,7 +77,6 @@ python -m app.rag.baixar_documentos --arquivo ms_guia_atividade_fisica ~/Downloa
 ```bash
 pip install -r requirements.txt
 cp .env.example .env                 # preencha OLLAMA_API_KEY
-python -m app.rag.baixar_documentos  # baixa e recorta os 5 PDFs em documentos/
 python -m app.rag.avaliacao          # indexa 256/512/1024 e gera a tabela RAGAS em resultados/
 python -m app.main                   # interface, aba "📚 DocMind RAG"
 ```

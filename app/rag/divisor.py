@@ -16,6 +16,7 @@ from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 SEPARADORES = ["\n\n", "\n", ". ", " ", ""]
 PROPORCAO_OVERLAP = 0.125
+MIN_CARACTERES_CHUNK = 40
 
 
 @dataclass(frozen=True)
@@ -52,9 +53,13 @@ def criar_splitter(config: ConfigChunking) -> RecursiveCharacterTextSplitter:
 
 
 def dividir_documentos(documentos: Sequence[Document], chunk_size: int) -> List[Document]:
-    """Divide os documentos e numera cada chunk com um id estável."""
+    """Divide os documentos, descarta fragmentos muito curtos e numera cada chunk."""
     config = CONFIGURACOES.get(chunk_size, ConfigChunking(chunk_size))
-    chunks = criar_splitter(config).split_documents(list(documentos))
+    chunks = [
+        chunk
+        for chunk in criar_splitter(config).split_documents(list(documentos))
+        if len(chunk.page_content.strip()) >= MIN_CARACTERES_CHUNK
+    ]
 
     contadores: Dict[str, int] = {}
     for chunk in chunks:

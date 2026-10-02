@@ -1,0 +1,97 @@
+[
+  {
+    "id": "ms_guia_atividade_fisica",
+    "titulo": "Guia de Atividade Física para a População Brasileira",
+    "autoria": "Ministério da Saúde — Secretaria de Atenção Primária à Saúde",
+    "tipo": "guia_oficial",
+    "categoria": "recomendacao_atividade_fisica",
+    "publico": "adultos",
+    "url": "https://bvsms.saude.gov.br/bvs/publicacoes/guia_atividade_fisica_populacao_brasileira.pdf",
+    "ano": 2021,
+    "arquivo": "ms_guia_atividade_fisica.pdf",
+    "paginas_originais": [
+      10,
+      24,
+      25,
+      29,
+      30
+    ],
+    "total_paginas_original": 52
+  },
+  {
+    "id": "oms_diretrizes_atividade_fisica",
+    "titulo": "Diretrizes da OMS para atividade física e comportamento sedentário: num piscar de olhos",
+    "autoria": "Organização Mundial da Saúde (OMS)",
+    "tipo": "guia_oficial",
+    "categoria": "recomendacao_atividade_fisica",
+    "publico": "geral",
+    "url": "https://iris.who.int/bitstream/handle/10665/337001/9789240014886-por.pdf",
+    "ano": 2020,
+    "arquivo": "oms_diretrizes_atividade_fisica.pdf",
+    "paginas_originais": [
+      7,
+      10,
+      11,
+      12,
+      13
+    ],
+    "total_paginas_original": 24
+  },
+  {
+    "id": "rbme_recuperacao_entre_series",
+    "titulo": "Recuperação entre séries no treino de força: revisão sistemática e meta-análise",
+    "autoria": "Revista Brasileira de Medicina do Esporte (SciELO)",
+    "tipo": "artigo_cientifico",
+    "categoria": "prescricao_treino_forca",
+    "publico": "adultos",
+    "url": "https://www.scielo.br/j/rbme/a/Y9vYkwhHhbzKcKNSG9Ft85s/?format=pdf&lang=pt",
+    "ano": 2024,
+    "arquivo": "rbme_recuperacao_entre_series.pdf",
+    "paginas_originais": [
+      1,
+      2,
+      3,
+      5,
+      6
+    ],
+    "total_paginas_original": 9
+  },
+  {
+    "id": "rbme_variaveis_treino_idosos",
+    "titulo": "Influência de variáveis do treinamento contra-resistência sobre a força muscular de idosos: uma revisão sistemática com ênfase nas relações dose-resposta",
+    "autoria": "Revista Brasileira de Medicina do Esporte (SciELO)",
+    "tipo": "artigo_cientifico",
+    "categoria": "prescricao_treino_forca",
+    "publico": "idosos",
+    "url": "https://www.scielo.br/j/rbme/a/8z4PZxrP4fPvJgfccndzx8M/?format=pdf&lang=pt",
+    "ano": 2007,
+    "arquivo": "rbme_variaveis_treino_idosos.pdf",
+    "paginas_originais": [
+      2,
+      3,
+      4,
+      5,
+      6
+    ],
+    "total_paginas_original": 7
+  },
+  {
+    "id": "jpe_treino_supervisionado",
+    "titulo": "Sessão de treinamento de força supervisionada aumenta a carga total levantada e as respostas subjetivas em sujeitos treinados",
+    "autoria": "Journal of Physical Education (SciELO)",
+    "tipo": "artigo_cientifico",
+    "categoria": "supervisao_treino",
+    "publico": "adultos",
+    "url": "https://www.scielo.br/j/jpe/a/5fnPtNjMh8Swt3g8kcHTgkt/?format=pdf&lang=pt",
+    "ano": 2020,
+    "arquivo": "jpe_treino_supervisionado.pdf",
+    "paginas_originais": [
+      1,
+      2,
+      3,
+      4,
+      5
+    ],
+    "total_paginas_original": 7
+  }
+]
