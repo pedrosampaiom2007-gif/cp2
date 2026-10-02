@@ -21,12 +21,14 @@ class Reranker:
     """Carrega o cross-encoder sob demanda e reordena trechos."""
 
     def __init__(self, modelo: str = MODELO_RERANKER) -> None:
+        """Guarda o nome do modelo; o carregamento só acontece no primeiro uso."""
         self.nome_modelo = modelo
         self._modelo = None
         self.erro: Optional[str] = None
 
     @property
     def disponivel(self) -> bool:
+        """Carrega o cross-encoder na primeira chamada; False se não for possível."""
         if self._modelo is None and self.erro is None:
             try:
                 from sentence_transformers import CrossEncoder

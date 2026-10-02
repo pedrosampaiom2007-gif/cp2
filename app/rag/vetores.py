@@ -44,14 +44,17 @@ class Trecho:
 
     @property
     def titulo(self) -> str:
+        """Título do documento de origem."""
         return str(self.metadados.get("titulo", "documento"))
 
     @property
     def pagina(self) -> int:
+        """Página do documento original."""
         return int(self.metadados.get("pagina", 0) or 0)
 
     @property
     def chunk_id(self) -> str:
+        """Identificador do chunk na coleção."""
         return str(self.metadados.get("chunk_id", ""))
 
     def citacao(self) -> str:
@@ -79,6 +82,7 @@ class BaseVetorial:
         embeddings: Optional[OllamaEmbeddings] = None,
         cliente: Optional[chromadb.ClientAPI] = None,
     ) -> None:
+        """Conecta ao ChromaDB e abre (ou cria) a coleção do chunk_size."""
         self.config = config or carregar_config()
         self.chunk_size = chunk_size
         self.embeddings = embeddings or criar_embeddings(self.config)
@@ -90,6 +94,7 @@ class BaseVetorial:
         )
 
     def total(self) -> int:
+        """Quantidade de chunks indexados na coleção."""
         return self.colecao.count()
 
     def indexar(self, chunks: Sequence[Document], recriar: bool = False) -> int:

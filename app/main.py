@@ -357,6 +357,7 @@ def construir_interface(app: Aplicacao):
         limpar.click(_limpar, None, saidas)
 
         def _turno_rag(pergunta, historico, chunk_size, tipo, publico, reranking):
+            """Callback de uma pergunta ao RAG: atualiza o chat e o painel de fontes."""
             pergunta = (pergunta or "").strip()
             if not pergunta:
                 return historico, "", gr.update()

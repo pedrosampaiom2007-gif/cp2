@@ -26,10 +26,12 @@ class ConfigChunking:
 
     @property
     def chunk_overlap(self) -> int:
+        """Overlap em caracteres: 12,5% do chunk_size."""
         return int(self.chunk_size * PROPORCAO_OVERLAP)
 
     @property
     def nome(self) -> str:
+        """Nome curto da configuração, ex.: chunk_512."""
         return f"chunk_{self.chunk_size}"
 
 
@@ -39,6 +41,7 @@ CONFIGURACOES: Dict[int, ConfigChunking] = {
 
 
 def criar_splitter(config: ConfigChunking) -> RecursiveCharacterTextSplitter:
+    """Splitter recursivo configurado com o tamanho e o overlap da configuração."""
     return RecursiveCharacterTextSplitter(
         chunk_size=config.chunk_size,
         chunk_overlap=config.chunk_overlap,

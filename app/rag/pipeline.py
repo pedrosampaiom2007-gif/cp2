@@ -41,9 +41,11 @@ class RespostaRAG:
 
     @property
     def contextos(self) -> List[str]:
+        """Textos dos trechos usados, no formato que o RAGAS espera."""
         return [t.texto for t in self.trechos]
 
     def fontes_markdown(self) -> str:
+        """Lista numerada das fontes com documento, página, chunk e nota."""
         if not self.trechos:
             return "_Nenhum trecho recuperado._"
         linhas = []
@@ -61,6 +63,7 @@ class RespostaRAG:
         return "\n\n".join(linhas)
 
     def para_markdown(self) -> str:
+        """Resposta seguida da lista de fontes, para a interface."""
         return f"{self.resposta}\n\n---\n**Fontes**\n\n{self.fontes_markdown()}"
 
 
@@ -94,6 +97,7 @@ class DocMindRAG:
         reranker: Optional[Reranker] = None,
         documentos: Optional[Sequence[Document]] = None,
     ) -> None:
+        """Abre a coleção do chunk_size e monta o reranker e a chain de geração."""
         self.config = config or carregar_config()
         self.chunk_size = chunk_size or self.config.rag_chunk_size
         self.base = BaseVetorial(self.chunk_size, self.config, embeddings=criar_embeddings(self.config))

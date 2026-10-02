@@ -46,16 +46,20 @@ PERGUNTAS_TESTE: List[str] = [
 
 @dataclass
 class ResultadoConfiguracao:
+    """Notas RAGAS de uma configuração de chunking."""
+
     chunk_size: int
     total_chunks: int
     tabela: pd.DataFrame
 
     @property
     def faithfulness(self) -> float:
+        """Faithfulness médio das perguntas."""
         return float(self.tabela["faithfulness"].mean())
 
     @property
     def answer_relevancy(self) -> float:
+        """Answer relevancy médio das perguntas."""
         return float(self.tabela["answer_relevancy"].mean())
 
 
@@ -131,6 +135,7 @@ def escolher_vencedor(resultados: Sequence[ResultadoConfiguracao]) -> ResultadoC
 
 
 def tabela_resumo(resultados: Sequence[ResultadoConfiguracao]) -> pd.DataFrame:
+    """Médias de faithfulness e answer_relevancy por configuração."""
     return pd.DataFrame(
         [
             {
@@ -220,6 +225,7 @@ def comparar_chunking(
 
 
 def main() -> None:
+    """Entry point: python -m app.rag.avaliacao"""
     parser = argparse.ArgumentParser(description="Compara configurações de chunking com RAGAS.")
     parser.add_argument("--chunks", nargs="+", type=int, default=list(CHUNKS_PADRAO))
     args = parser.parse_args()

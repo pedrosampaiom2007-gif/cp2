@@ -39,6 +39,7 @@ CABECALHOS_HTTP = {
 
 
 def _sem_acento(texto: str) -> str:
+    """Texto em minúsculas e sem acentos, para comparar palavras-chave."""
     normalizado = unicodedata.normalize("NFKD", texto.lower())
     return "".join(c for c in normalizado if not unicodedata.combining(c))
 
@@ -128,6 +129,7 @@ def carregar_registro() -> Dict[str, Dict[str, object]]:
 
 
 def salvar_registro(registro: Dict[str, Dict[str, object]]) -> None:
+    """Grava o `fontes.json` com os metadados de todas as fontes."""
     ARQUIVO_FONTES.write_text(
         json.dumps(list(registro.values()), ensure_ascii=False, indent=2), encoding="utf-8"
     )
@@ -176,6 +178,7 @@ def importar_arquivo_local(identificador: str, caminho: str) -> Dict[str, object
 
 
 def main() -> None:
+    """Entry point: python -m app.rag.baixar_documentos"""
     parser = argparse.ArgumentParser(description="Baixa as fontes da base do DocMind.")
     parser.add_argument("--forcar", action="store_true", help="Baixa tudo de novo.")
     parser.add_argument(

@@ -38,6 +38,7 @@ def limpar_texto(texto: str) -> str:
 
 
 def _registro_fontes(pasta: Path) -> Dict[str, Dict[str, object]]:
+    """Metadados do `fontes.json`, indexados pelo nome do arquivo."""
     arquivo = pasta / "fontes.json"
     if not arquivo.exists():
         return {}
