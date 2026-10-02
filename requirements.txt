@@ -1,0 +1,16 @@
+# Núcleo LangChain + LCEL
+langchain>=0.3.0,<0.4.0
+langchain-core>=0.3.0,<0.4.0
+langchain-community>=0.3.0,<0.4.0
+
+# Integração com Ollama Cloud (ChatOllama)
+langchain-ollama>=0.2.0,<0.4.0
+
+# Validação de saída estruturada
+pydantic>=2.7,<3.0
+
+# Carregamento do .env (chave nunca hardcoded)
+python-dotenv>=1.0.1
+
+# Interface web local
+gradio>=4.44.0,<7.0
