@@ -1,4 +1,4 @@
-"""CKP01 — Chatbot Profissional (FIAP · 2º Semestre · Módulo 1).
+"""CKP01 + CKP02 — Halter e DocMind RAG (FIAP · 2º Semestre).
 
 Pacote do chatbot de domínio "Treino de academia e prescrição de exercícios".
 Módulos:
@@ -8,6 +8,7 @@ Módulos:
     memory_manager  -> as 3 estratégias de memória gerenciada (Aula 02)
     chain           -> arquitetura de 2 chains da Aula 03 (conversa + LCEL)
     context_rot     -> demonstração da degradação por contexto crescente
+    rag             -> DocMind: pipeline RAG sobre documentos reais (CKP02)
     main            -> interface Gradio + entry point (python -m app.main)
 """
 
@@ -28,7 +29,7 @@ def silenciar_avisos_de_legado() -> None:
     )
 
 
-__version__ = "1.0.0"
+__version__ = "2.0.0"
 __all__ = [
     "config",
     "prompts",
@@ -36,4 +37,5 @@ __all__ = [
     "memory_manager",
     "chain",
     "context_rot",
+    "rag",
 ]

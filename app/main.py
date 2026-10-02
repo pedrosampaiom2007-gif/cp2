@@ -1,4 +1,4 @@
-"""Interface Gradio + entry point do CKP01.
+"""Interface Gradio + entry point do Halter (CKP01) com o DocMind RAG (CKP02).
 
     python -m app.main          # sobe a interface em http://localhost:7860
     python -m app.main --share  # link público temporário do Gradio
@@ -11,12 +11,23 @@ import sys
 import traceback
 from typing import Dict, List, Optional, Tuple
 
-from app.chain import ChatbotTreino
+from app.chain import RESPOSTA_BLOQUEIO, ChatbotTreino, detectar_tentativa_injecao
 from app.config import ConfiguracaoInvalida, carregar_config
 from app.memory_manager import contar_turnos_usuario, resumo_estrategia
 from app.prompts import NOME_ASSISTENTE
+from app.rag.fontes import FONTES, tabela_fontes_markdown
 
-TITULO = f"CKP01 · {NOME_ASSISTENTE} — assistente de treino de academia"
+TITULO = f"{NOME_ASSISTENTE} — assistente de treino de academia"
+
+EXEMPLOS_RAG = [
+    "Quantos minutos por semana de atividade moderada um adulto deve fazer?",
+    "Quantas vezes por semana devo fazer fortalecimento muscular?",
+    "Qual intervalo entre séries favorece a hipertrofia?",
+    "O que é recomendado para idosos além do treino de força?",
+    "A supervisão do treino muda a carga levantada?",
+]
+
+TODOS = "(todos)"
 
 MENSAGEM_ABERTURA = (
     f"Fala! Eu sou o {NOME_ASSISTENTE}, seu assistente de treino. "
@@ -43,6 +54,7 @@ class Aplicacao:
     def __init__(self, verbose: bool = False) -> None:
         self.bot = ChatbotTreino(verbose=verbose)
         self.ultima_analise = None
+        self.bases_rag: Dict[int, object] = {}
 
     # -- chat --------------------------------------------------------------
     def conversar(self, mensagem: str) -> Tuple[str, str]:
@@ -117,6 +129,71 @@ class Aplicacao:
         self.ultima_analise = None
         return [], self.analise_markdown(), self.painel_memoria()
 
+    # -- DocMind RAG -------------------------------------------------------
+    def base_rag(self, chunk_size: int):
+        """Base RAG do chunk_size pedido, indexada na primeira chamada."""
+        from app.rag.pipeline import DocMindRAG
+
+        if chunk_size not in self.bases_rag:
+            rag = DocMindRAG(chunk_size=chunk_size, config=self.bot.config)
+            rag.preparar()
+            self.bases_rag[chunk_size] = rag
+        return self.bases_rag[chunk_size]
+
+    def indexar_rag(self, chunk_size: int) -> str:
+        """Carrega, divide e indexa os documentos no ChromaDB."""
+        from app.rag.carregador import resumo_documentos
+        from app.rag.divisor import estatisticas_chunks
+
+        try:
+            self.bases_rag.pop(int(chunk_size), None)
+            rag = self.base_rag(int(chunk_size))
+            linhas = "\n".join(
+                f"| {d['titulo']} | {d['tipo']} | {d['paginas']} | {d['caracteres']} |"
+                for d in resumo_documentos(rag.documentos)
+            )
+            stats = estatisticas_chunks(rag.chunks)
+            return (
+                f"**Coleção `{rag.base.nome_colecao}`** com {rag.base.total()} chunks "
+                f"(média de {stats['media_caracteres']} caracteres).\n\n"
+                "| Documento | Tipo | Páginas | Caracteres |\n|---|---|---:|---:|\n" + linhas
+            )
+        except Exception as erro:
+            traceback.print_exc()
+            return f"⚠️ Não consegui indexar: `{erro}`"
+
+    def conversar_rag(
+        self,
+        pergunta: str,
+        chunk_size: int,
+        tipo: str,
+        publico: str,
+        reranking: bool,
+    ) -> Tuple[str, str]:
+        """Resposta do RAG e o painel de fontes citadas."""
+        from app.rag.vetores import montar_filtro
+
+        pergunta = (pergunta or "").strip()
+        if not pergunta:
+            return "Faça uma pergunta sobre treino ou atividade física.", ""
+        if detectar_tentativa_injecao(pergunta):
+            return RESPOSTA_BLOQUEIO, ""
+        try:
+            rag = self.base_rag(int(chunk_size))
+            filtros = montar_filtro(
+                tipo=None if tipo == TODOS else tipo,
+                publico=None if publico == TODOS else publico,
+            )
+            resposta = rag.responder(pergunta, filtros=filtros, reranking=reranking)
+            return resposta.para_markdown(), resposta.fontes_markdown()
+        except Exception as erro:
+            traceback.print_exc()
+            return (
+                f"⚠️ Falha no RAG: `{erro}`\n\nConfira se os documentos foram baixados "
+                "(`python -m app.rag.baixar_documentos`) e a `OLLAMA_API_KEY`.",
+                "",
+            )
+
     # -- context rot -------------------------------------------------------
     def rodar_context_rot(self) -> str:
         """Executa a demonstração de degradação e devolve a tabela."""
@@ -156,8 +233,8 @@ def construir_interface(app: Aplicacao):
     with gr.Blocks(**blocks_kwargs) as demo:
         gr.Markdown(
             f"# 🏋️ {TITULO}\n"
-            "FIAP · Prompt Engineering & AI · 2º Semestre · Módulo 1 — "
-            "LangChain LCEL, memória gerenciada e Pydantic v2."
+            "FIAP · Prompt Engineering & AI · 2º Semestre — "
+            "LangChain LCEL, memória gerenciada, Pydantic v2 e RAG com ChromaDB."
         )
 
         with gr.Tab("💬 Conversa"):
@@ -182,6 +259,48 @@ def construir_interface(app: Aplicacao):
                 with gr.Column(scale=2):
                     gr.Markdown("### Saída estruturada")
                     painel_analise = gr.Markdown(app.analise_markdown())
+
+        with gr.Tab("📚 DocMind RAG"):
+            gr.Markdown(
+                "Perguntas respondidas **somente** com base nos documentos da base, "
+                "com o trecho de origem citado em cada resposta."
+            )
+            with gr.Row():
+                with gr.Column(scale=3):
+                    chat_rag = gr.Chatbot(height=460, label="DocMind", **chatbot_kwargs)
+                    entrada_rag = gr.Textbox(
+                        placeholder="Pergunte sobre treino ou atividade física...",
+                        label="Pergunta",
+                        lines=2,
+                    )
+                    with gr.Row():
+                        enviar_rag = gr.Button("Perguntar", variant="primary")
+                        limpar_rag = gr.Button("Limpar")
+                    gr.Examples(examples=EXEMPLOS_RAG, inputs=entrada_rag, label="Exemplos")
+                with gr.Column(scale=2):
+                    chunk_rag = gr.Dropdown(
+                        choices=[256, 512, 1024],
+                        value=app.bot.config.rag_chunk_size,
+                        label="chunk_size",
+                    )
+                    tipo_rag = gr.Dropdown(
+                        choices=[TODOS] + sorted({f.tipo for f in FONTES}),
+                        value=TODOS,
+                        label="Filtro: tipo de documento",
+                    )
+                    publico_rag = gr.Dropdown(
+                        choices=[TODOS] + sorted({f.publico for f in FONTES}),
+                        value=TODOS,
+                        label="Filtro: público",
+                    )
+                    rerank_rag = gr.Checkbox(
+                        value=app.bot.config.rag_reranking, label="Reranking com cross-encoder"
+                    )
+                    indexar_rag = gr.Button("Indexar documentos")
+                    painel_fontes = gr.Markdown("### Fontes citadas\n_Faça uma pergunta._")
+            with gr.Accordion("Documentos da base", open=False):
+                gr.Markdown(tabela_fontes_markdown())
+                painel_indice = gr.Markdown()
 
         with gr.Tab("🧠 Memória"):
             gr.Markdown(
@@ -236,6 +355,24 @@ def construir_interface(app: Aplicacao):
             )
 
         limpar.click(_limpar, None, saidas)
+
+        def _turno_rag(pergunta, historico, chunk_size, tipo, publico, reranking):
+            pergunta = (pergunta or "").strip()
+            if not pergunta:
+                return historico, "", gr.update()
+            resposta, fontes = app.conversar_rag(pergunta, chunk_size, tipo, publico, reranking)
+            historico = list(historico or []) + [
+                {"role": "user", "content": pergunta},
+                {"role": "assistant", "content": resposta},
+            ]
+            return historico, "", "### Fontes citadas\n\n" + (fontes or "—")
+
+        entradas_rag = [entrada_rag, chat_rag, chunk_rag, tipo_rag, publico_rag, rerank_rag]
+        saidas_rag = [chat_rag, entrada_rag, painel_fontes]
+        enviar_rag.click(_turno_rag, entradas_rag, saidas_rag)
+        entrada_rag.submit(_turno_rag, entradas_rag, saidas_rag)
+        limpar_rag.click(lambda: ([], "", "### Fontes citadas\n_Faça uma pergunta._"), None, saidas_rag)
+        indexar_rag.click(app.indexar_rag, chunk_rag, painel_indice)
         atualizar_memoria.click(app.painel_memoria, None, painel_memoria)
         botao_relatorio.click(app.relatorio, None, painel_relatorio)
         botao_rot.click(app.rodar_context_rot, None, painel_rot)

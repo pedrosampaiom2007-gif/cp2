@@ -14,3 +14,13 @@ python-dotenv>=1.0.1
 
 # Interface web local
 gradio>=4.44.0,<7.0
+
+# DocMind RAG (CKP02)
+langchain-text-splitters>=0.3.0,<0.4.0
+chromadb>=0.5.0
+pypdf>=4.0
+ragas>=0.2.6,<0.3
+sentence-transformers>=3.0
+pandas>=2.0
+tabulate>=0.9
+matplotlib>=3.7

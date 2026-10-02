@@ -1,15 +1,136 @@
-# CKP01 — Chatbot Profissional · Treino de academia
+# Halter + DocMind RAG · Treino de academia
 
-**Prompt Engineering & AI · FIAP · 2º Semestre 2026 · Módulo 1**
+**Prompt Engineering & AI · FIAP · 2º Semestre 2026 · Módulos 1 e 2 (CKP01 + CKP02)**
 
 **Integrantes:**
 Luan de Araujo Carneiro (RM573691) · Pedro Sampaio Mochnacs Arruda (RM573522) ·
 Raul Sampaio Mochnacs Arruda (RM573523) · Pedro Ribeiro Lopes (RM570083) ·
 Kevin Rodrigues de Melo (RM571777) · Pedro Vianna (RM570747) · Lana Ozeki (RM569795)
 
-**Peso: 25% · Apresentação: Aula 04 · Entrega: 23:55 do dia da Aula 05 (.zip via Teams — só o líder)**
+---
+
+# CKP02 — DocMind RAG
+
+Pipeline RAG completo sobre documentos reais de treino e atividade física, adicionado ao
+projeto do CKP01 como o pacote `app/rag/` e como a aba **📚 DocMind RAG** da interface.
+
+```
+documentos/*.pdf ──► LOAD ──► SPLIT ──► EMBED ──────────► STORE
+                    pypdf    Recursive  nomic-embed-text   ChromaDB
+                             Character  (Ollama)           treino_academia_<chunk>
+                             TextSplitter                      │
+                                                               ▼
+ pergunta ──► embed_query ──► RETRIEVE (top 12, where=filtros) ──► RERANK (cross-encoder, top 4)
+                                                                        │
+                                                                        ▼
+                                    resposta citando [n] ◄── GENERATE (gemma4:cloud, temperatura 0)
+```
+
+| Componente | Implementação |
+|---|---|
+| Base de conhecimento | 5 PDFs reais (tabela abaixo), até 5 páginas de cada — `app/rag/fontes.py`, `app/rag/baixar_documentos.py` |
+| Load | `app/rag/carregador.py` — um `Document` por página, com título, tipo, categoria, público, ano, URL e página do original |
+| Split | `app/rag/divisor.py` — `RecursiveCharacterTextSplitter(separators=["\n\n", "\n", ". ", " ", ""])`, chunk 256 / 512 / 1024 com overlap de 12,5% (32 / 64 / 128) |
+| Embed | `app/rag/vetores.py` — `OllamaEmbeddings(model="nomic-embed-text")` com `embed_documents()` e `embed_query()` |
+| Store | `app/rag/vetores.py` — `chromadb.PersistentClient`, coleção `treino_academia_<chunk_size>` (distância cosseno) |
+| Retrieve + metadata filtering | `BaseVetorial.buscar(..., where=)` e `montar_filtro(tipo, categoria, publico, ano_minimo, fonte)` |
+| Reranking | `app/rag/reranker.py` — `CrossEncoder("cross-encoder/ms-marco-MiniLM-L-6-v2")` reordena 12 candidatos e entrega 4 ao LLM |
+| Generate | `app/rag/pipeline.py` — `ChatPromptTemplate \| ChatOllama(gemma4:cloud, temperature=0) \| StrOutputParser`, resposta cita `[n]` e lista documento, página e chunk |
+| Tool para o CKP03 | `app.rag.pipeline.buscar(consulta)` |
+| RAGAS | `app/rag/avaliacao.py` — faithfulness + answer_relevancy, 8 perguntas × 3 configurações |
+| Interface | `app/main.py`, aba **📚 DocMind RAG** — chat, filtros de metadados, reranking liga/desliga e fontes citadas |
+| Notebook | `CKP02_DocMind_RAG.ipynb` — o pipeline inteiro, etapa por etapa, com a tabela RAGAS |
+
+## Base de conhecimento
+
+| # | Documento | Autoria | Tipo | Público | Fonte |
+|---:|---|---|---|---|---|
+| 1 | Guia de Atividade Física para a População Brasileira (2021) | Ministério da Saúde | guia_oficial | adultos | [PDF](https://bvsms.saude.gov.br/bvs/publicacoes/guia_atividade_fisica_populacao_brasileira.pdf) |
+| 2 | Diretrizes da OMS para atividade física e comportamento sedentário: num piscar de olhos (2020) | Organização Mundial da Saúde | guia_oficial | geral | [PDF](https://iris.who.int/bitstream/handle/10665/337001/9789240014886-por.pdf) |
+| 3 | Recuperação entre séries no treino de força: revisão sistemática e meta-análise | Revista Brasileira de Medicina do Esporte | artigo_cientifico | adultos | [SciELO](https://www.scielo.br/j/rbme/a/Y9vYkwhHhbzKcKNSG9Ft85s/?format=pdf&lang=pt) |
+| 4 | Influência de variáveis do treinamento contra-resistência sobre a força muscular de idosos: uma revisão sistemática com ênfase nas relações dose-resposta | Revista Brasileira de Medicina do Esporte | artigo_cientifico | idosos | [SciELO](https://www.scielo.br/j/rbme/a/8z4PZxrP4fPvJgfccndzx8M/?format=pdf&lang=pt) |
+| 5 | Sessão de treinamento de força supervisionada aumenta a carga total levantada e as respostas subjetivas em sujeitos treinados | Journal of Physical Education | artigo_cientifico | adultos | [SciELO](https://www.scielo.br/j/jpe/a/5fnPtNjMh8Swt3g8kcHTgkt/?format=pdf&lang=pt) |
+
+`python -m app.rag.baixar_documentos` baixa os cinco PDFs e grava em `documentos/` um recorte
+de **no máximo 5 páginas** de cada um: as páginas recebem uma nota pela frequência das
+palavras-chave do tema e as cinco melhores entram, na ordem original. O arquivo
+`documentos/fontes.json` registra quais páginas do original foram usadas, e a citação de cada
+resposta aponta a página do documento original.
+
+Se algum site bloquear o download, baixe o PDF pelo navegador e importe:
+
+```bash
+python -m app.rag.baixar_documentos --arquivo ms_guia_atividade_fisica ~/Downloads/guia.pdf
+```
+
+## Como executar o CKP02
+
+```bash
+pip install -r requirements.txt
+cp .env.example .env                 # preencha OLLAMA_API_KEY
+python -m app.rag.baixar_documentos  # baixa e recorta os 5 PDFs em documentos/
+python -m app.rag.avaliacao          # indexa 256/512/1024 e gera a tabela RAGAS em resultados/
+python -m app.main                   # interface, aba "📚 DocMind RAG"
+```
+
+Uma pergunta direto pelo terminal:
+
+```bash
+python -m app.rag.pipeline "Quantas vezes por semana devo fazer fortalecimento muscular?"
+```
+
+No **Colab**: abra `CKP02_DocMind_RAG.ipynb`, cadastre `OLLAMA_API_KEY` em *Secrets* e rode
+*Executar tudo*. A primeira célula clona este repositório e instala as dependências.
+
+## Como adicionar novos documentos à base
+
+1. Coloque o arquivo (`.pdf`, `.txt` ou `.md`) na pasta `documentos/`.
+2. Crie ao lado um `.json` com o mesmo nome, com os metadados usados nos filtros e na citação:
+
+   ```json
+   {
+     "titulo": "Nome do documento",
+     "autoria": "Órgão ou revista",
+     "tipo": "artigo_cientifico",
+     "categoria": "prescricao_treino_forca",
+     "publico": "adultos",
+     "ano": 2024,
+     "url": "https://link-da-fonte"
+   }
+   ```
+
+   Sem o `.json` o documento entra com tipo `outro` e público `geral`.
+3. Reindexe: botão **Indexar documentos** na aba DocMind, ou `python -m app.rag.avaliacao`.
+   A coleção é recriada sempre que o conjunto de chunks muda.
+
+Para uma fonte que deva ser baixada automaticamente, acrescente um `FonteDocumento` em
+`app/rag/fontes.py` (URL, metadados e palavras-chave para a seleção de páginas) e rode
+`python -m app.rag.baixar_documentos`.
+
+## Comparação de chunking com RAGAS
+
+As três configurações respondem às mesmas 8 perguntas (`PERGUNTAS_TESTE` em
+`app/rag/avaliacao.py`), com o mesmo reranker e o mesmo modelo. O RAGAS usa o `gemma4:cloud`
+como juiz e o `nomic-embed-text` para o answer_relevancy.
+
+| chunk_size | overlap | faithfulness médio | answer_relevancy médio |
+|---:|---:|---:|---:|
+| 256 | 32 | _rodar_ | _rodar_ |
+| 512 | 64 | _rodar_ | _rodar_ |
+| 1024 | 128 | _rodar_ | _rodar_ |
+
+`python -m app.rag.avaliacao` grava em `resultados/`:
+
+- `ragas_por_pergunta.csv` — pergunta, resposta, fontes e as duas métricas por configuração;
+- `ragas_resumo.csv` — médias por configuração;
+- `ragas_relatorio.md` — as duas tabelas e a escolha final justificada pelos números.
+
+O vencedor é o de maior faithfulness médio, com answer_relevancy como desempate, e vira o
+padrão da interface pela variável `RAG_CHUNK_SIZE` do `.env`.
 
 ---
+
+# CKP01 — Chatbot Profissional
 
 ## Domínio
 
@@ -56,7 +177,7 @@ projeto — a que contém `requirements.txt` e a pasta `app/`.
 **Windows (Prompt de Comando):**
 
 ```cmd
-cd caminho\para\CKP01_treino_grupo
+cd caminho\para\cp2
 copy .env.example .env
 notepad .env
 pip install -r requirements.txt
@@ -66,7 +187,7 @@ python -m app.main
 **Linux e macOS:**
 
 ```bash
-cd caminho/para/CKP01_treino_grupo
+cd caminho/para/cp2
 cp .env.example .env
 pip install -r requirements.txt
 python -m app.main
@@ -99,10 +220,19 @@ py -3.12 -m app.main
 ### Estrutura
 
 ```
-CKP01_treino_grupo/
+cp2/
 ├── app/
 │   ├── __init__.py        # metadados do pacote e filtro de avisos de legado
 │   ├── main.py            # interface Gradio + entry point
+│   ├── rag/               # DocMind RAG (CKP02)
+│   │   ├── fontes.py              # catálogo das 5 fontes reais
+│   │   ├── baixar_documentos.py   # download + recorte de até 5 páginas
+│   │   ├── carregador.py          # load
+│   │   ├── divisor.py             # split
+│   │   ├── vetores.py             # embed + store + metadata filtering
+│   │   ├── reranker.py            # cross-encoder
+│   │   ├── pipeline.py            # retrieve + generate + buscar()
+│   │   └── avaliacao.py           # RAGAS
 │   ├── chain.py           # as 2 chains da Aula 03 + fachada ChatbotTreino
 │   ├── memory_manager.py  # as 3 estratégias de memória gerenciada
 │   ├── schemas.py         # Pydantic v2: AnaliseConsulta e RelatorioSessao
@@ -110,6 +240,9 @@ CKP01_treino_grupo/
 │   ├── prompts.py         # system prompts com XML tagging
 │   ├── config.py          # leitura e validação do .env
 │   └── tokens.py          # estimativa de tokens usada pela memória
+├── documentos/            # PDFs da base + fontes.json
+├── resultados/            # tabelas RAGAS
+├── CKP02_DocMind_RAG.ipynb
 ├── .env.example
 ├── requirements.txt
 └── README.md
